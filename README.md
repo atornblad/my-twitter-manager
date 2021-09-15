@@ -16,7 +16,7 @@ This is just a simple automated destroyer of old tweets and likes to keep my Twi
 ## Like rules:
 
 * Likes are kept for at least 5 days, and at most 19 days.
-* The number of days is = 5+*atan*((*likes*+*retweets*)/50)
+* The number of days is = 5 + 9 \* *atan*((*likes*+*retweets*)/50)
 
 ## Frameworks used:
 
