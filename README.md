@@ -1,6 +1,7 @@
 # My Twitter Manager
 
 [![Daily](https://github.com/atornblad/my-twitter-manager/actions/workflows/daily.yml/badge.svg)](https://github.com/atornblad/my-twitter-manager/actions/workflows/daily.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/atornblad/my-twitter-manager/blob/master/backend/LICENSE)
 
 This is just a simple automated destroyer of old tweets and likes to keep my Twitter timeline trimmed.
 
