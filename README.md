@@ -24,3 +24,7 @@ This is just a simple automated destroyer of old tweets and likes to keep my Twi
 
 * [Tweetinvi](https://github.com/linvi/tweetinvi)
 
+## Get in touch
+
+* [atornblad.se/contact](https://atornblad.se/contact)
+* [@atornblad](https://twitter.com/atornblad)
