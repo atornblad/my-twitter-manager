@@ -18,6 +18,8 @@ jobs:
         dotnet-version: 5.0.x
     - name: Restore dependencies
       run: dotnet restore
+    - name: Dotnet Format
+      run: dotnet format --check
     - name: Build
       run: dotnet build --no-restore
     - name: Destroy old stuff
