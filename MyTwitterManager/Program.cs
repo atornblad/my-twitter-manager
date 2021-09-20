@@ -9,7 +9,7 @@ using Tweetinvi.Parameters.V2;
 
 namespace MyTwitterManager
 {
-    class Program
+    public static class Program
     {
         static async Task Main(string[] args)
         {
@@ -27,63 +27,36 @@ namespace MyTwitterManager
 
         private static async Task DeleteOldTweets(TwitterClient client, string screenName)
         {
-            bool running = true;
-            long? untilId = null;
-
             var tweetsToDelete = new HashSet<long>();
             int totalCount = 0;
 
-            while (running)
+            await client.ForEachUserTimelineTweet(screenName, (tweet) =>
             {
-                var tweets = await client.Timelines.GetUserTimelineAsync(new TimelineParams
+                int retweets = tweet.RetweetCount;
+                string text = tweet.FullText;
+                if (tweet.IsRetweet)
                 {
-                    User = new UserIdentifier { ScreenName = screenName },
-                    IncludeRetweets = true,
-                    IncludeEntities = true,
-                    PageSize = 10,
-                    MaxId = untilId
-                });
-
-                int count = 0;
-                long lastId = long.MaxValue;
-                foreach (var tweet in tweets)
-                {
-                    int retweets = tweet.RetweetCount;
-                    string text = tweet.FullText;
-                    if (tweet.IsRetweet)
-                    {
-                        retweets -= tweet.RetweetedTweet.RetweetCount;
-                        text = $"(RETWEET) {tweet.RetweetedTweet.FullText}";
-                    }
-
-                    bool anyInteraction = (tweet.FavoriteCount + retweets + (tweet.QuoteCount ?? 0)) > 0 || tweet.InReplyToStatusId.HasValue;
-
-                    int maxDaysOld = 14 + (anyInteraction ? 14 : 0) + tweet.FavoriteCount * 7 + retweets * 14 + (tweet.QuoteCount ?? 0) * 28;
-                    if (maxDaysOld > 180) maxDaysOld = 365 * 5;
-
-                    var daysOld = DateTimeOffset.Now - tweet.CreatedAt;
-                    if (daysOld > TimeSpan.FromDays(maxDaysOld))
-                    {
-                        tweetsToDelete.Add(tweet.Id);
-                        Console.WriteLine($"{tweet.Id}: {tweet.CreatedAt} {text} ({tweet.FavoriteCount} likes, {retweets} retweets, {tweet.QuoteCount ?? 0} quotes)");
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"^^^ TOO OLD ({daysOld}, allowed: {maxDaysOld} days) ^^^");
-                        Console.ResetColor();
-                    }
-
-                    lastId = tweet.Id;
-                    ++count;
-                    ++totalCount;
+                    retweets -= tweet.RetweetedTweet.RetweetCount;
+                    text = $"(RETWEET) {tweet.RetweetedTweet.FullText}";
                 }
-                if (count == 0)
+
+                bool anyInteraction = (tweet.FavoriteCount + retweets + (tweet.QuoteCount ?? 0)) > 0 || tweet.InReplyToStatusId.HasValue;
+
+                int maxDaysOld = 14 + (anyInteraction ? 14 : 0) + tweet.FavoriteCount * 7 + retweets * 14 + (tweet.QuoteCount ?? 0) * 28;
+                if (maxDaysOld > 180) maxDaysOld = 365 * 5;
+
+                var daysOld = DateTimeOffset.Now - tweet.CreatedAt;
+                if (daysOld > TimeSpan.FromDays(maxDaysOld))
                 {
-                    running = false;
+                    tweetsToDelete.Add(tweet.Id);
+                    Console.WriteLine($"{tweet.Id}: {tweet.CreatedAt} {text} ({tweet.FavoriteCount} likes, {retweets} retweets, {tweet.QuoteCount ?? 0} quotes)");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"^^^ OLD TWEET ({daysOld}, allowed: {maxDaysOld} days) ^^^");
+                    Console.ResetColor();
                 }
-                else
-                {
-                    untilId = lastId - 1;
-                }
-            }
+
+                ++totalCount;
+            });
 
             var destroyers = tweetsToDelete.Select(id => client.Tweets.DestroyTweetAsync(id)).ToArray();
             Console.WriteLine($"Destroying {destroyers.Length} tweets of {totalCount}, please wait...");
@@ -93,46 +66,74 @@ namespace MyTwitterManager
 
         private static async Task DeleteOldLikes(TwitterClient client, string screenName)
         {
-            bool running = true;
-            long? untilId = null;
-
             var tweetsToUnlike = new HashSet<long>();
             int totalCount = 0;
 
+            await client.ForEachUserFavoriteTweet(screenName, tweet =>
+            {
+                string text = tweet.FullText;
+                if (tweet.IsRetweet)
+                {
+                    text = $"(RETWEET) {tweet.RetweetedTweet.FullText}";
+                }
+                int maxDaysOld = (int)(5 + 9 * Math.Atan((tweet.FavoriteCount + tweet.RetweetCount) / 50.0));
+
+                var daysOld = DateTimeOffset.Now - tweet.CreatedAt;
+                if (daysOld > TimeSpan.FromDays(maxDaysOld))
+                {
+                    tweetsToUnlike.Add(tweet.Id);
+                    Console.WriteLine($"{tweet.Id}: {tweet.CreatedAt} {tweet.CreatedBy.ScreenName} tweeted {text} ({tweet.FavoriteCount} likes, {tweet.RetweetCount} retweets, {tweet.QuoteCount ?? 0} quotes)");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"^^^ OLD LIKE ({daysOld}, allowed: {maxDaysOld} days) ^^^");
+                    Console.ResetColor();
+                }
+
+                ++totalCount;
+            });
+
+            var destroyers = tweetsToUnlike.Select(id => client.Tweets.UnfavoriteTweetAsync(id)).ToArray();
+            Console.WriteLine($"Destroying {destroyers.Length} likes of {totalCount}, please wait...");
+            Task.WaitAll(destroyers);
+            Console.WriteLine("Done!");
+        }
+
+        public static async Task ForEachUserFavoriteTweet(this ITwitterClient client, string screenName, Action<ITweet> tweetAction, int batchSize = 10)
+        {
+            await ForEachTweet(client, (client, untilId) => client.Tweets.GetUserFavoriteTweetsAsync(new FavoritesParams
+            {
+                User = new UserIdentifier { ScreenName = screenName },
+                IncludeEntities = true,
+                PageSize = batchSize,
+                MaxId = untilId
+            }), tweetAction);
+        }
+
+        public static async Task ForEachUserTimelineTweet(this ITwitterClient client, string screenName, Action<ITweet> tweetAction, int batchSize = 10, bool includeRetweets = true)
+        {
+            await ForEachTweet(client, (client, untilId) => client.Timelines.GetUserTimelineAsync(new TimelineParams
+            {
+                User = new UserIdentifier { ScreenName = screenName },
+                IncludeRetweets = includeRetweets,
+                IncludeEntities = true,
+                PageSize = batchSize,
+                MaxId = untilId
+            }), tweetAction);
+        }
+
+        private static async Task ForEachTweet(ITwitterClient client, Func<ITwitterClient, long?, Task<ITweet[]>> tweetGetter, Action<ITweet> tweetAction)
+        {
+            bool running = true;
+            long? untilId = null;
             while (running)
             {
-                var tweets = await client.Tweets.GetUserFavoriteTweetsAsync(new FavoritesParams
-                {
-                    User = new UserIdentifier { ScreenName = screenName },
-                    IncludeEntities = true,
-                    PageSize = 10,
-                    MaxId = untilId
-                });
+                var tweets = await tweetGetter(client, untilId);
                 int count = 0;
-
                 long lastId = long.MaxValue;
                 foreach (var tweet in tweets)
                 {
-                    string text = tweet.FullText;
-                    if (tweet.IsRetweet)
-                    {
-                        text = $"(RETWEET) {tweet.RetweetedTweet.FullText}";
-                    }
-                    int maxDaysOld = (int)(5 + 9 * Math.Atan((tweet.FavoriteCount + tweet.RetweetCount) / 50.0));
-
-                    var daysOld = DateTimeOffset.Now - tweet.CreatedAt;
-                    if (daysOld > TimeSpan.FromDays(maxDaysOld))
-                    {
-                        tweetsToUnlike.Add(tweet.Id);
-                        Console.WriteLine($"{tweet.Id}: {tweet.CreatedAt} {tweet.CreatedBy.ScreenName} tweeted {text} ({tweet.FavoriteCount} likes, {tweet.RetweetCount} retweets, {tweet.QuoteCount ?? 0} quotes)");
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"^^^ OLD LIKE ({daysOld}, allowed: {maxDaysOld} days) ^^^");
-                        Console.ResetColor();
-                    }
-
+                    tweetAction(tweet);
                     lastId = tweet.Id;
                     ++count;
-                    ++totalCount;
                 }
                 if (count == 0)
                 {
@@ -143,11 +144,6 @@ namespace MyTwitterManager
                     untilId = lastId - 1;
                 }
             }
-
-            var destroyers = tweetsToUnlike.Select(id => client.Tweets.UnfavoriteTweetAsync(id)).ToArray();
-            Console.WriteLine($"Destroying {destroyers.Length} likes of {totalCount}, please wait...");
-            Task.WaitAll(destroyers);
-            Console.WriteLine("Done!");
         }
     }
 
