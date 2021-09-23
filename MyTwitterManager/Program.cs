@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,11 +21,12 @@ namespace MyTwitterManager
             string screenName = Environment.GetEnvironmentVariable("TWITTER_SCREEN_NAME");
 
             var client = new TwitterClient(apiKey, apiSecret, accessToken, accessSecret);
+            client.Config.RateLimitTrackerMode = RateLimitTrackerMode.TrackAndAwait;
             await DeleteOldTweets(client, screenName);
             await DeleteOldLikes(client, screenName);
         }
 
-        private static async Task DeleteOldTweets(TwitterClient client, string screenName)
+        private static async Task DeleteOldTweets(ITwitterClient client, string screenName)
         {
             var tweetsToDelete = new HashSet<long>();
             int totalCount = 0;
@@ -64,7 +65,7 @@ namespace MyTwitterManager
             Console.WriteLine("Done!");
         }
 
-        private static async Task DeleteOldLikes(TwitterClient client, string screenName)
+        private static async Task DeleteOldLikes(ITwitterClient client, string screenName)
         {
             var tweetsToUnlike = new HashSet<long>();
             int totalCount = 0;
