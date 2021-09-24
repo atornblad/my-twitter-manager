@@ -150,7 +150,7 @@ namespace MyTwitterManager
 
         private static async Task<T> RetryAsync<T>(Func<Task<T>> func, string title, TimeSpan minDelay, TimeSpan maxDelay, int maxTries)
         {
-            for (int i = 1; i <= maxTries -1; ++i)
+            for (int i = 1; i <= maxTries - 1; ++i)
             {
                 try
                 {
@@ -167,7 +167,7 @@ namespace MyTwitterManager
                     Console.Error.WriteLine($"Caught exception {e.GetType().Name}: \"{e.Message}\"");
                     Console.Error.WriteLine($"Sleeping for {sleep}");
                     Thread.Sleep(sleep);
-                    Console.Error.WriteLine($"Retrying {i+1} of {maxTries}");
+                    Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
                 }
             }
             return await func();
