@@ -142,6 +142,7 @@ namespace MyTwitterManager
             while (running)
             {
                 var tweets = await RetryAsync(() => tweetGetter(client, untilId), "Get Tweets", TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(1), 5);
+                if (tweets == null) return;
                 int count = 0;
                 long lastId = long.MaxValue;
                 foreach (var tweet in tweets)
@@ -171,8 +172,13 @@ namespace MyTwitterManager
                 }
                 catch (Exception e)
                 {
-                    if (e is TwitterException || e is TimeoutException)
+                    if (e is TwitterException te)
                     {
+                        if (e.Message.Contains("Code : 404"))
+                        {
+                            Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
+                            return;
+                        }
                         double logMin = Math.Log(minDelay.TotalSeconds);
                         double logMax = Math.Log(maxDelay.TotalSeconds);
                         double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
@@ -203,8 +209,13 @@ namespace MyTwitterManager
                 }
                 catch (Exception e)
                 {
-                    if (e is TwitterException || e is TimeoutException)
+                    if (e is TwitterException te)
                     {
+                        if (e.Message.Contains("Code : 404"))
+                        {
+                            Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
+                            return default(T);
+                        }
                         double logMin = Math.Log(minDelay.TotalSeconds);
                         double logMax = Math.Log(maxDelay.TotalSeconds);
                         double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
