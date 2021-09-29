@@ -93,7 +93,7 @@ namespace MyTwitterManager
                 ++totalCount;
             });
 
-            var destroyers = tweetsToUnlike.Select(id => client.Tweets.UnfavoriteTweetAsync(id)).ToArray();
+            var destroyers = tweetsToUnlike.Select(id => RetryAsync(() => client.Tweets.UnfavoriteTweetAsync(id), $"Deleting like {id}", TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(1), 5)).ToArray();
             Console.WriteLine($"Destroying {destroyers.Length} likes of {totalCount}, please wait...");
             Task.WaitAll(destroyers);
             Console.WriteLine("Done!");
@@ -146,6 +146,31 @@ namespace MyTwitterManager
                     untilId = lastId - 1;
                 }
             }
+        }
+
+        private static async Task RetryAsync(Func<Task> func, string title, TimeSpan minDelay, TimeSpan maxDelay, int maxTries)
+        {
+            for (int i = 1; i <= maxTries - 1; ++i)
+            {
+                try
+                {
+                    await func();
+                }
+                catch (Exception e)
+                {
+                    double logMin = Math.Log(minDelay.TotalSeconds);
+                    double logMax = Math.Log(maxDelay.TotalSeconds);
+                    double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
+                    double seconds = Math.Exp(logThis);
+                    TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
+                    Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
+                    Console.Error.WriteLine($"Caught exception {e.GetType().Name}: \"{e.Message}\"");
+                    Console.Error.WriteLine($"Sleeping for {sleep}");
+                    Thread.Sleep(sleep);
+                    Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
+                }
+            }
+            await func();
         }
 
         private static async Task<T> RetryAsync<T>(Func<Task<T>> func, string title, TimeSpan minDelay, TimeSpan maxDelay, int maxTries)
