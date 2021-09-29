@@ -1,25 +1,38 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
+using System.Resources;
 using System.Threading;
 using System.Threading.Tasks;
 using Tweetinvi;
+using Tweetinvi.Exceptions;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
-using Tweetinvi.Parameters.V2;
+
+[assembly: CLSCompliant(true)]
 
 namespace MyTwitterManager
 {
+    [SuppressMessage("Reliability", "CA2007", Justification = "It is generally appropriate to suppress the warning entirely for projects that represent application code rather than library code")]
+    [SuppressMessage("Reliability", "CA1303", Justification = "It is generally appropriate to suppress the warning entirely for projects that represent application code rather than library code")]
     public static class Program
     {
-        static async Task Main(string[] args)
+        private const string TWITTER_API_KEY = nameof(TWITTER_API_KEY);
+        private const string TWITTER_API_SECRET = nameof(TWITTER_API_SECRET);
+        private const string TWITTER_ACCESS_TOKEN = nameof(TWITTER_ACCESS_TOKEN);
+        private const string TWITTER_ACCESS_TOKEN_SECRET = nameof(TWITTER_ACCESS_TOKEN_SECRET);
+        private const string TWITTER_SCREEN_NAME = nameof(TWITTER_SCREEN_NAME);
+
+        static async Task Main()
         {
             Console.WriteLine("=== My Twitter Manager ===");
-            string apiKey = Environment.GetEnvironmentVariable("TWITTER_API_KEY");
-            string apiSecret = Environment.GetEnvironmentVariable("TWITTER_API_SECRET");
-            string accessToken = Environment.GetEnvironmentVariable("TWITTER_ACCESS_TOKEN");
-            string accessSecret = Environment.GetEnvironmentVariable("TWITTER_ACCESS_TOKEN_SECRET");
-            string screenName = Environment.GetEnvironmentVariable("TWITTER_SCREEN_NAME");
+            string apiKey = Environment.GetEnvironmentVariable(TWITTER_API_KEY);
+            string apiSecret = Environment.GetEnvironmentVariable(TWITTER_API_SECRET);
+            string accessToken = Environment.GetEnvironmentVariable(TWITTER_ACCESS_TOKEN);
+            string accessSecret = Environment.GetEnvironmentVariable(TWITTER_ACCESS_TOKEN_SECRET);
+            string screenName = Environment.GetEnvironmentVariable(TWITTER_SCREEN_NAME);
 
             var client = new TwitterClient(apiKey, apiSecret, accessToken, accessSecret);
             client.Config.RateLimitTrackerMode = RateLimitTrackerMode.TrackAndAwait;
@@ -99,7 +112,7 @@ namespace MyTwitterManager
             Console.WriteLine("Done!");
         }
 
-        public static async Task ForEachUserFavoriteTweet(this ITwitterClient client, string screenName, Action<ITweet> tweetAction, int batchSize = 10)
+        private static async Task ForEachUserFavoriteTweet(this ITwitterClient client, string screenName, [NotNull] Action<ITweet> tweetAction, int batchSize = 10)
         {
             await ForEachTweet(client, (client, untilId) => client.Tweets.GetUserFavoriteTweetsAsync(new FavoritesParams
             {
@@ -110,7 +123,7 @@ namespace MyTwitterManager
             }), tweetAction);
         }
 
-        public static async Task ForEachUserTimelineTweet(this ITwitterClient client, string screenName, Action<ITweet> tweetAction, int batchSize = 10, bool includeRetweets = true)
+        private static async Task ForEachUserTimelineTweet(this ITwitterClient client, string screenName, [NotNull] Action<ITweet> tweetAction, int batchSize = 10, bool includeRetweets = true)
         {
             await ForEachTweet(client, (client, untilId) => client.Timelines.GetUserTimelineAsync(new TimelineParams
             {
@@ -158,16 +171,23 @@ namespace MyTwitterManager
                 }
                 catch (Exception e)
                 {
-                    double logMin = Math.Log(minDelay.TotalSeconds);
-                    double logMax = Math.Log(maxDelay.TotalSeconds);
-                    double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
-                    double seconds = Math.Exp(logThis);
-                    TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
-                    Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
-                    Console.Error.WriteLine($"Caught exception {e.GetType().Name}: \"{e.Message}\"");
-                    Console.Error.WriteLine($"Sleeping for {sleep}");
-                    Thread.Sleep(sleep);
-                    Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
+                    if (e is TwitterException || e is TimeoutException)
+                    {
+                        double logMin = Math.Log(minDelay.TotalSeconds);
+                        double logMax = Math.Log(maxDelay.TotalSeconds);
+                        double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
+                        double seconds = Math.Exp(logThis);
+                        TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
+                        Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
+                        Console.Error.WriteLine($"Caught exception {e.GetType().Name}: \"{e.Message}\"");
+                        Console.Error.WriteLine($"Sleeping for {sleep}");
+                        Thread.Sleep(sleep);
+                        Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
             }
             await func();
@@ -183,17 +203,24 @@ namespace MyTwitterManager
                 }
                 catch (Exception e)
                 {
-                    double logMin = Math.Log(minDelay.TotalSeconds);
-                    double logMax = Math.Log(maxDelay.TotalSeconds);
-                    double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
-                    double seconds = Math.Exp(logThis);
-                    TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
-                    Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
-                    Console.Error.WriteLine($"Caught exception {e.GetType().Name}: \"{e.Message}\"");
-                    Console.Error.WriteLine($"Sleeping for {sleep}");
-                    Thread.Sleep(sleep);
-                    Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
-                }
+                    if (e is TwitterException || e is TimeoutException)
+                    {
+                        double logMin = Math.Log(minDelay.TotalSeconds);
+                        double logMax = Math.Log(maxDelay.TotalSeconds);
+                        double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
+                        double seconds = Math.Exp(logThis);
+                        TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
+                        Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
+                        Console.Error.WriteLine($"Caught exception {e.GetType().Name}: \"{e.Message}\"");
+                        Console.Error.WriteLine($"Sleeping for {sleep}");
+                        Thread.Sleep(sleep);
+                        Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                    }
             }
             return await func();
         }
@@ -250,37 +277,6 @@ namespace MyTwitterManager
         public string FormattedCustomQueryParameters { get; private set; }
 
         public TweetMode? TweetMode { get; set; }
-
-        public void AddCustomQueryParameter(string name, string value)
-        {
-            CustomQueryParameters.Add(new Tuple<string, string>(name, value));
-        }
-
-        public void ClearCustomQueryParameters()
-        {
-            CustomQueryParameters.Clear();
-        }
-    }
-
-    class SearchParams : ISearchTweetsV2Parameters
-    {
-        public DateTime? EndTime { get; set; }
-        public string Query { get; set; }
-        public int? PageSize { get; set; }
-        public string NextToken { get; set; }
-        public string SinceId { get; set; }
-        public DateTime? StartTime { get; set; }
-        public string UntilId { get; set; }
-        public HashSet<string> Expansions { get; set; }
-        public HashSet<string> MediaFields { get; set; }
-        public HashSet<string> PlaceFields { get; set; }
-        public HashSet<string> PollFields { get; set; }
-        public HashSet<string> TweetFields { get; set; }
-        public HashSet<string> UserFields { get; set; }
-
-        public List<Tuple<string, string>> CustomQueryParameters { get; private set; } = new List<Tuple<string, string>>();
-
-        public string FormattedCustomQueryParameters { get; private set; }
 
         public void AddCustomQueryParameter(string name, string value)
         {
