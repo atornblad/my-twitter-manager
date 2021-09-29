@@ -44,7 +44,7 @@ namespace MyTwitterManager
 
                 bool anyInteraction = (tweet.FavoriteCount + retweets + (tweet.QuoteCount ?? 0)) > 0 || tweet.InReplyToStatusId.HasValue;
 
-                int maxDaysOld = 14 + (anyInteraction ? 14 : 0) + tweet.FavoriteCount * 7 + retweets * 14 + (tweet.QuoteCount ?? 0) * 28;
+                int maxDaysOld = 14 + (anyInteraction ? 7 : 0) + tweet.FavoriteCount * 3 + retweets * 7 + (tweet.QuoteCount ?? 0) * 14;
                 if (maxDaysOld > 180) maxDaysOld = 365 * 5;
 
                 var daysOld = DateTimeOffset.Now - tweet.CreatedAt;
@@ -78,7 +78,7 @@ namespace MyTwitterManager
                 {
                     text = $"(RETWEET) {tweet.RetweetedTweet.FullText}";
                 }
-                int maxDaysOld = (int)(5 + 9 * Math.Atan((tweet.FavoriteCount + tweet.RetweetCount) / 50.0));
+                int maxDaysOld = (int)(3 + 4 * Math.Atan((tweet.FavoriteCount + tweet.RetweetCount) / 50.0));
 
                 var daysOld = DateTimeOffset.Now - tweet.CreatedAt;
                 if (daysOld > TimeSpan.FromDays(maxDaysOld))
