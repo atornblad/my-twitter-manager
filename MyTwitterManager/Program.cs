@@ -64,7 +64,7 @@ namespace MyTwitterManager
                 if (daysOld > TimeSpan.FromDays(maxDaysOld))
                 {
                     tweetsToDelete.Add(tweet.Id);
-                    Console.WriteLine($"{tweet.Id}: {tweet.CreatedAt} {text} ({tweet.FavoriteCount} likes, {retweets} retweets, {tweet.QuoteCount ?? 0} quotes)");
+                    Console.WriteLine($"https://twitter.com/{tweet.CreatedBy.ScreenName}/status/{tweet.Id} : {text} ({tweet.FavoriteCount} likes, {retweets} retweets, {tweet.QuoteCount ?? 0} quotes)");
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"^^^ OLD TWEET ({daysOld}, allowed: {maxDaysOld} days) ^^^");
                     Console.ResetColor();
@@ -97,7 +97,7 @@ namespace MyTwitterManager
                 if (daysOld > TimeSpan.FromDays(maxDaysOld))
                 {
                     tweetsToUnlike.Add(tweet.Id);
-                    Console.WriteLine($"{tweet.Id}: {tweet.CreatedAt} {tweet.CreatedBy.ScreenName} tweeted {text} ({tweet.FavoriteCount} likes, {tweet.RetweetCount} retweets, {tweet.QuoteCount ?? 0} quotes)");
+                    Console.WriteLine($"https://twitter.com/{tweet.CreatedBy.ScreenName}/status/{tweet.Id} : {text} ({tweet.FavoriteCount} likes, {tweet.RetweetCount} retweets, {tweet.QuoteCount ?? 0} quotes)");
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"^^^ OLD LIKE ({daysOld}, allowed: {maxDaysOld} days) ^^^");
                     Console.ResetColor();
