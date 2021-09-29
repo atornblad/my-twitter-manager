@@ -220,7 +220,7 @@ namespace MyTwitterManager
                     {
                         throw;
                     }
-                    }
+                }
             }
             return await func();
         }
