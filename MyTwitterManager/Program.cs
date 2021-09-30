@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Linq;
-using System.Resources;
 using System.Threading;
 using System.Threading.Tasks;
+using ATornblad.Conphig;
 using Tweetinvi;
 using Tweetinvi.Exceptions;
 using Tweetinvi.Models;
@@ -19,25 +18,15 @@ namespace MyTwitterManager
     [SuppressMessage("Reliability", "CA1303", Justification = "It is generally appropriate to suppress the warning entirely for projects that represent application code rather than library code")]
     public static class Program
     {
-        private const string TWITTER_API_KEY = nameof(TWITTER_API_KEY);
-        private const string TWITTER_API_SECRET = nameof(TWITTER_API_SECRET);
-        private const string TWITTER_ACCESS_TOKEN = nameof(TWITTER_ACCESS_TOKEN);
-        private const string TWITTER_ACCESS_TOKEN_SECRET = nameof(TWITTER_ACCESS_TOKEN_SECRET);
-        private const string TWITTER_SCREEN_NAME = nameof(TWITTER_SCREEN_NAME);
-
         static async Task Main()
         {
             Console.WriteLine("=== My Twitter Manager ===");
-            string apiKey = Environment.GetEnvironmentVariable(TWITTER_API_KEY);
-            string apiSecret = Environment.GetEnvironmentVariable(TWITTER_API_SECRET);
-            string accessToken = Environment.GetEnvironmentVariable(TWITTER_ACCESS_TOKEN);
-            string accessSecret = Environment.GetEnvironmentVariable(TWITTER_ACCESS_TOKEN_SECRET);
-            string screenName = Environment.GetEnvironmentVariable(TWITTER_SCREEN_NAME);
+            var settings = Config.Load<Settings>();
 
-            var client = new TwitterClient(apiKey, apiSecret, accessToken, accessSecret);
+            var client = new TwitterClient(settings.ApiKey, settings.ApiSecret, settings.AccessToken, settings.AccessTokenSecret);
             client.Config.RateLimitTrackerMode = RateLimitTrackerMode.TrackAndAwait;
-            await DeleteOldTweets(client, screenName);
-            await DeleteOldLikes(client, screenName);
+            await DeleteOldTweets(client, settings.ScreenName);
+            await DeleteOldLikes(client, settings.ScreenName);
         }
 
         private static async Task DeleteOldTweets(ITwitterClient client, string screenName)
