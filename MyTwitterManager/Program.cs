@@ -28,19 +28,15 @@ namespace MyTwitterManager
             var client = new TwitterClient(settings.ApiKey, settings.ApiSecret, settings.AccessToken, settings.AccessTokenSecret);
             client.Config.RateLimitTrackerMode = RateLimitTrackerMode.TrackAndAwait;
 
-            var user = await RetryAsync(
-                () => client.UsersV2.GetUserByNameAsync(new GetUserParams
-                {
-                    Username = settings.ScreenName,
-                    Expansions = new HashSet<string>(new[] { "pinned_tweet_id" })
-                }),
+            var users = await RetryAsync(
+                () => client.UsersV2.GetUsersByNameAsync(settings.ScreenName),
                 $"Get user {settings.ScreenName}",
                 TimeSpan.FromSeconds(1),
                 TimeSpan.FromMinutes(1),
                 5
             );
 
-            string pinnedIdRaw = user.User.PinnedTweetId;
+            string pinnedIdRaw = users.Users[0].PinnedTweetId;
 
             var permanent = new List<long>();
             if (!string.IsNullOrEmpty(pinnedIdRaw))
@@ -282,16 +278,6 @@ namespace MyTwitterManager
         public IUserIdentifier User { get; set; }
         public bool? IncludeEntities { get; set; }
         public TweetMode? TweetMode { get; set; }
-    }
-
-    class GetUserParams : ParamsBase, IGetUserByNameV2Parameters
-    {
-        public string Username { get; set; }
-        public string By => throw new NotImplementedException();
-
-        public HashSet<string> Expansions { get; set; }
-        public HashSet<string> TweetFields { get; set; }
-        public HashSet<string> UserFields { get; set; }
     }
 
     class TimelineParams : ParamsBase, IGetUserTimelineParameters
