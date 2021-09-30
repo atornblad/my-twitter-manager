@@ -10,6 +10,7 @@ using Tweetinvi;
 using Tweetinvi.Exceptions;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
+using Tweetinvi.Parameters.V2;
 
 [assembly: CLSCompliant(true)]
 
@@ -28,7 +29,11 @@ namespace MyTwitterManager
             client.Config.RateLimitTrackerMode = RateLimitTrackerMode.TrackAndAwait;
 
             var user = await RetryAsync(
-                () => client.UsersV2.GetUserByNameAsync(settings.ScreenName),
+                () => client.UsersV2.GetUserByNameAsync(new GetUserParams
+                {
+                    Username = settings.ScreenName,
+                    Expansions = new HashSet<string>(new[] { "pinned_tweet_id" })
+                }),
                 $"Get user {settings.ScreenName}",
                 TimeSpan.FromSeconds(1),
                 TimeSpan.FromMinutes(1),
@@ -198,7 +203,7 @@ namespace MyTwitterManager
                     }
                     double logMin = Math.Log(minDelay.TotalSeconds);
                     double logMax = Math.Log(maxDelay.TotalSeconds);
-                    double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
+                    double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 2);
                     double seconds = Math.Exp(logThis);
                     TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
                     Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
@@ -228,7 +233,7 @@ namespace MyTwitterManager
                     }
                     double logMin = Math.Log(minDelay.TotalSeconds);
                     double logMax = Math.Log(maxDelay.TotalSeconds);
-                    double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
+                    double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 2);
                     double seconds = Math.Exp(logThis);
                     TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
                     Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
@@ -250,20 +255,16 @@ namespace MyTwitterManager
         public string IdStr { get; set; }
     }
 
-    class FavoritesParams : IGetUserFavoriteTweetsParameters
+    class ParamsBase : IMinMaxQueryParameters, ICustomRequestParameters
     {
-        public IUserIdentifier User { get; set; }
-        public bool? IncludeEntities { get; set; }
         public int PageSize { get; set; }
         public long? SinceId { get; set; }
         public long? MaxId { get; set; }
         public ContinueMinMaxCursor ContinueMinMaxCursor { get; set; }
 
-        public List<Tuple<string, string>> CustomQueryParameters { get; private init; } = new List<Tuple<string, string>>();
+        public List<Tuple<string, string>> CustomQueryParameters { get; private set; } = new List<Tuple<string, string>>();
 
-        public string FormattedCustomQueryParameters { get; private init; }
-
-        public TweetMode? TweetMode { get; set; }
+        public string FormattedCustomQueryParameters { get; set; }
 
         public void AddCustomQueryParameter(string name, string value)
         {
@@ -276,32 +277,30 @@ namespace MyTwitterManager
         }
     }
 
-    class TimelineParams : IGetUserTimelineParameters
+    class FavoritesParams : ParamsBase, IGetUserFavoriteTweetsParameters
+    {
+        public IUserIdentifier User { get; set; }
+        public bool? IncludeEntities { get; set; }
+        public TweetMode? TweetMode { get; set; }
+    }
+
+    class GetUserParams : ParamsBase, IGetUserByNameV2Parameters
+    {
+        public string Username { get; set; }
+        public string By => throw new NotImplementedException();
+
+        public HashSet<string> Expansions { get; set; }
+        public HashSet<string> TweetFields { get; set; }
+        public HashSet<string> UserFields { get; set; }
+    }
+
+    class TimelineParams : ParamsBase, IGetUserTimelineParameters
     {
         public IUserIdentifier User { get; set; }
         public bool IncludeRetweets { get; set; }
         public bool ExcludeReplies { get; set; }
         public bool? TrimUser { get; set; }
         public bool? IncludeEntities { get; set; }
-        public int PageSize { get; set; }
-        public long? SinceId { get; set; }
-        public long? MaxId { get; set; }
-        public ContinueMinMaxCursor ContinueMinMaxCursor { get; set; }
-
-        public List<Tuple<string, string>> CustomQueryParameters { get; private set; } = new List<Tuple<string, string>>();
-
-        public string FormattedCustomQueryParameters { get; private set; }
-
         public TweetMode? TweetMode { get; set; }
-
-        public void AddCustomQueryParameter(string name, string value)
-        {
-            CustomQueryParameters.Add(new Tuple<string, string>(name, value));
-        }
-
-        public void ClearCustomQueryParameters()
-        {
-            CustomQueryParameters.Clear();
-        }
     }
 }
