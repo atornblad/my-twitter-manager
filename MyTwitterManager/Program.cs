@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,11 +26,32 @@ namespace MyTwitterManager
 
             var client = new TwitterClient(settings.ApiKey, settings.ApiSecret, settings.AccessToken, settings.AccessTokenSecret);
             client.Config.RateLimitTrackerMode = RateLimitTrackerMode.TrackAndAwait;
-            await DeleteOldTweets(client, settings.ScreenName);
+
+            var user = await RetryAsync(
+                () => client.UsersV2.GetUserByIdAsync(settings.ScreenName),
+                $"Get user {settings.ScreenName}",
+                TimeSpan.FromSeconds(1),
+                TimeSpan.FromMinutes(1),
+                5
+            );
+
+            string pinnedIdRaw = user.User.PinnedTweetId;
+
+            var permanent = new List<long>();
+            if (!string.IsNullOrEmpty(pinnedIdRaw))
+            {
+                permanent.Add(long.Parse(pinnedIdRaw, CultureInfo.InvariantCulture));
+            }
+            if (settings.PermanentTweetIds != null)
+            {
+                permanent.AddRange(settings.PermanentTweetIds);
+            }
+
+            await DeleteOldTweets(client, settings.ScreenName, permanent.ToArray());
             await DeleteOldLikes(client, settings.ScreenName);
         }
 
-        private static async Task DeleteOldTweets(ITwitterClient client, string screenName)
+        private static async Task DeleteOldTweets(ITwitterClient client, string screenName, long[] permanentIds)
         {
             var tweetsToDelete = new HashSet<long>();
             int totalCount = 0;
@@ -38,6 +60,14 @@ namespace MyTwitterManager
             {
                 int retweets = tweet.RetweetCount;
                 string text = tweet.FullText;
+
+                if (permanentIds.Contains(tweet.Id))
+                {
+                    Console.WriteLine($"Permanent tweet {tweet.Id}: {tweet.FullText}");
+                    ++totalCount;
+                    return;
+                }
+
                 if (tweet.IsRetweet)
                 {
                     retweets -= tweet.RetweetedTweet.RetweetCount;
@@ -159,30 +189,23 @@ namespace MyTwitterManager
                 {
                     await func();
                 }
-                catch (Exception e)
+                catch (TwitterException te)
                 {
-                    if (e is TwitterException te)
+                    if (te.StatusCode == 404)
                     {
-                        if (e.Message.Contains("Code : 404"))
-                        {
-                            Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
-                            return;
-                        }
-                        double logMin = Math.Log(minDelay.TotalSeconds);
-                        double logMax = Math.Log(maxDelay.TotalSeconds);
-                        double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
-                        double seconds = Math.Exp(logThis);
-                        TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
-                        Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
-                        Console.Error.WriteLine($"Caught exception {e.GetType().Name}: \"{e.Message}\"");
-                        Console.Error.WriteLine($"Sleeping for {sleep}");
-                        Thread.Sleep(sleep);
-                        Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
+                        Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
+                        return;
                     }
-                    else
-                    {
-                        throw;
-                    }
+                    double logMin = Math.Log(minDelay.TotalSeconds);
+                    double logMax = Math.Log(maxDelay.TotalSeconds);
+                    double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
+                    double seconds = Math.Exp(logThis);
+                    TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
+                    Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
+                    Console.Error.WriteLine($"Caught exception {te.GetType().Name}: \"{te.Message}\"");
+                    Console.Error.WriteLine($"Sleeping for {sleep}");
+                    Thread.Sleep(sleep);
+                    Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
                 }
             }
             await func();
@@ -196,30 +219,23 @@ namespace MyTwitterManager
                 {
                     return await func();
                 }
-                catch (Exception e)
+                catch (TwitterException te)
                 {
-                    if (e is TwitterException te)
+                    if (te.StatusCode == 404)
                     {
-                        if (e.Message.Contains("Code : 404"))
-                        {
-                            Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
-                            return default(T);
-                        }
-                        double logMin = Math.Log(minDelay.TotalSeconds);
-                        double logMax = Math.Log(maxDelay.TotalSeconds);
-                        double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
-                        double seconds = Math.Exp(logThis);
-                        TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
-                        Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
-                        Console.Error.WriteLine($"Caught exception {e.GetType().Name}: \"{e.Message}\"");
-                        Console.Error.WriteLine($"Sleeping for {sleep}");
-                        Thread.Sleep(sleep);
-                        Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
+                        Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
+                        return default;
                     }
-                    else
-                    {
-                        throw;
-                    }
+                    double logMin = Math.Log(minDelay.TotalSeconds);
+                    double logMax = Math.Log(maxDelay.TotalSeconds);
+                    double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 1);
+                    double seconds = Math.Exp(logThis);
+                    TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
+                    Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
+                    Console.Error.WriteLine($"Caught exception {te.GetType().Name}: \"{te.Message}\"");
+                    Console.Error.WriteLine($"Sleeping for {sleep}");
+                    Thread.Sleep(sleep);
+                    Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
                 }
             }
             return await func();

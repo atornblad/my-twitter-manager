@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using ATornblad.Conphig;
 
@@ -26,5 +26,9 @@ namespace MyTwitterManager
 
         [EnvironmentVariable(TWITTER_SCREEN_NAME)]
         public string ScreenName { get; set; }
+
+        [SuppressMessage("Performance", "CA1819", Justification = "I really don't care about performance for a configuration object!")]
+        [JsonPropertyName("permanent")]
+        public long[] PermanentTweetIds { get; set; }
     }
 }
