@@ -28,7 +28,7 @@ namespace MyTwitterManager
             client.Config.RateLimitTrackerMode = RateLimitTrackerMode.TrackAndAwait;
 
             var user = await RetryAsync(
-                () => client.UsersV2.GetUserByIdAsync(settings.ScreenName),
+                () => client.UsersV2.GetUserByNameAsync(settings.ScreenName),
                 $"Get user {settings.ScreenName}",
                 TimeSpan.FromSeconds(1),
                 TimeSpan.FromMinutes(1),
