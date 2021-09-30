@@ -29,6 +29,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Conphig" Version="0.9.1" />
+    <PackageReference Include="Conphig" Version="0.9.3" />
   </ItemGroup>
 </Project>

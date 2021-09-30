@@ -16,7 +16,7 @@ using Tweetinvi.Parameters;
 namespace MyTwitterManager
 {
     [SuppressMessage("Reliability", "CA2007", Justification = "It is generally appropriate to suppress the warning entirely for projects that represent application code rather than library code")]
-    [SuppressMessage("Reliability", "CA1303", Justification = "It is generally appropriate to suppress the warning entirely for projects that represent application code rather than library code")]
+    [SuppressMessage("Globalization", "CA1303", Justification = "I don't care about globalization for now.")]
     public static class Program
     {
         static async Task Main()

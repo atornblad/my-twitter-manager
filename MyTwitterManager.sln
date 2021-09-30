@@ -5,6 +5,13 @@ VisualStudioVersion = 16.0.810.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyTwitterManager", "MyTwitterManager\MyTwitterManager.csproj", "{49B4A9D9-3A2D-4643-9BC6-22C4E656FA70}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D7A7A83E-CC75-4DC4-BFF4-310F8B1BFA94}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+		LICENSE = LICENSE
+		CODE_OF_CONDUCT.md = CODE_OF_CONDUCT.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
