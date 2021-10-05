@@ -111,7 +111,8 @@ namespace MyTwitterManager
                 {
                     text = $"(RETWEET) {tweet.RetweetedTweet.FullText}";
                 }
-                int maxDaysOld = (int)(3 + 4 * Math.Atan((tweet.FavoriteCount + tweet.RetweetCount) / 50.0));
+                bool mentionsMe = tweet.FullText.Contains($"@{screenName}", StringComparison.InvariantCultureIgnoreCase);
+                int maxDaysOld = (int)(3 + 4 * Math.Atan((tweet.FavoriteCount + tweet.RetweetCount) / 50.0)) + (mentionsMe ? 7 : 0);
 
                 var daysOld = DateTimeOffset.Now - tweet.CreatedAt;
                 if (daysOld > TimeSpan.FromDays(maxDaysOld))
