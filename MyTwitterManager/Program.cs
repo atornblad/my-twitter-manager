@@ -30,10 +30,7 @@ namespace MyTwitterManager
 
             var users = await RetryAsync(
                 () => client.UsersV2.GetUsersByNameAsync(settings.ScreenName),
-                $"Get user {settings.ScreenName}",
-                TimeSpan.FromSeconds(1),
-                TimeSpan.FromMinutes(1),
-                5
+                $"Get user {settings.ScreenName}"
             );
 
             string pinnedIdRaw = users.Users[0].PinnedTweetId;
@@ -93,7 +90,12 @@ namespace MyTwitterManager
                 ++totalCount;
             });
 
-            var destroyers = tweetsToDelete.Select(id => client.Tweets.DestroyTweetAsync(id)).ToArray();
+            var destroyers = tweetsToDelete.Select(id =>
+                RetryAsync(
+                    () => client.Tweets.DestroyTweetAsync(id),
+                    $"Destroying tweet {id}"
+                )
+            ).ToArray();
             Console.WriteLine($"Destroying {destroyers.Length} tweets of {totalCount}, please wait...");
             Task.WaitAll(destroyers);
             Console.WriteLine("Done!");
@@ -127,7 +129,12 @@ namespace MyTwitterManager
                 ++totalCount;
             });
 
-            var destroyers = tweetsToUnlike.Select(id => RetryAsync(() => client.Tweets.UnfavoriteTweetAsync(id), $"Deleting like {id}", TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(1), 5)).ToArray();
+            var destroyers = tweetsToUnlike.Select(id =>
+                RetryAsync(
+                    () => client.Tweets.UnfavoriteTweetAsync(id),
+                    $"Deleting like {id}"
+                )
+            ).ToArray();
             Console.WriteLine($"Destroying {destroyers.Length} likes of {totalCount}, please wait...");
             Task.WaitAll(destroyers);
             Console.WriteLine("Done!");
@@ -183,7 +190,10 @@ namespace MyTwitterManager
             }
         }
 
-        private static async Task RetryAsync(Func<Task> func, string title, TimeSpan minDelay, TimeSpan maxDelay, int maxTries)
+        private static readonly TimeSpan MIN_RETRY_TIME = TimeSpan.FromSeconds(1);
+        private static readonly TimeSpan MAX_RETRY_TIME = TimeSpan.FromMinutes(1);
+
+        private static async Task RetryAsync(Func<Task> func, string title, TimeSpan? minDelay = null, TimeSpan? maxDelay = null, int maxTries = 5)
         {
             for (int i = 1; i <= maxTries - 1; ++i)
             {
@@ -199,8 +209,8 @@ namespace MyTwitterManager
                         Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
                         return;
                     }
-                    double logMin = Math.Log(minDelay.TotalSeconds);
-                    double logMax = Math.Log(maxDelay.TotalSeconds);
+                    double logMin = Math.Log((minDelay ?? MIN_RETRY_TIME).TotalSeconds);
+                    double logMax = Math.Log((maxDelay ?? MAX_RETRY_TIME).TotalSeconds);
                     double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 2);
                     double seconds = Math.Exp(logThis);
                     TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
@@ -214,7 +224,7 @@ namespace MyTwitterManager
             await func();
         }
 
-        private static async Task<T> RetryAsync<T>(Func<Task<T>> func, string title, TimeSpan minDelay, TimeSpan maxDelay, int maxTries)
+        private static async Task<T> RetryAsync<T>(Func<Task<T>> func, string title, TimeSpan? minDelay = null, TimeSpan? maxDelay = null, int maxTries = 5)
         {
             for (int i = 1; i <= maxTries - 1; ++i)
             {
@@ -229,8 +239,8 @@ namespace MyTwitterManager
                         Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
                         return default;
                     }
-                    double logMin = Math.Log(minDelay.TotalSeconds);
-                    double logMax = Math.Log(maxDelay.TotalSeconds);
+                    double logMin = Math.Log((minDelay ?? MIN_RETRY_TIME).TotalSeconds);
+                    double logMax = Math.Log((maxDelay ?? MAX_RETRY_TIME).TotalSeconds);
                     double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 2);
                     double seconds = Math.Exp(logThis);
                     TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
