@@ -190,6 +190,7 @@ namespace MyTwitterManager
                 try
                 {
                     await func();
+                    return; // Need to return here, so that the func isn't tried twice upon initial success!
                 }
                 catch (TwitterException te)
                 {
