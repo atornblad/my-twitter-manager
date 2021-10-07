@@ -59,7 +59,7 @@ namespace MyTwitterManager
                     () => client.Users.MuteUserAsync(id).ContinueWith(u => client.Users.UnblockUserAsync(id)),
                     $"Muting and unblocking user {id}"
                 )
-            ).ToArray();
+            ).Take(100).ToArray();
             Console.WriteLine($"Muting and unblocking {muterUnblockers.Length} users, please wait...");
             Task.WaitAll(muterUnblockers);
             Console.WriteLine("Done!");
