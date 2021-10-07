@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -47,6 +47,22 @@ namespace MyTwitterManager
 
             await DeleteOldTweets(client, settings.ScreenName, permanent.ToArray());
             await DeleteOldLikes(client, settings.ScreenName);
+            await IgnoreBlockedUsers(client, settings.ScreenName);
+        }
+
+        private static async Task IgnoreBlockedUsers(ITwitterClient client, string screenName)
+        {
+            long[] blockedIds = await RetryAsync(() => client.Users.GetBlockedUserIdsAsync(), "Getting blocked users");
+
+            var muterUnblockers = blockedIds.Select(id =>
+                RetryAsync(
+                    () => client.Users.MuteUserAsync(id).ContinueWith(u => client.Users.UnblockUserAsync(id)),
+                    $"Muting and unblocking user {id}"
+                )
+            ).ToArray();
+            Console.WriteLine($"Muting and unblocking {muterUnblockers.Length} users, please wait...");
+            Task.WaitAll(muterUnblockers);
+            Console.WriteLine("Done!");
         }
 
         private static async Task DeleteOldTweets(ITwitterClient client, string screenName, long[] permanentIds)
