@@ -60,7 +60,7 @@ namespace MyTwitterManager
                     $"Muting and unblocking user {id}"
                 )
             ).Take(100).ToArray();
-            Console.WriteLine($"Muting and unblocking {muterUnblockers.Length} users, please wait...");
+            Console.WriteLine($"Muting and unblocking {muterUnblockers.Length} users out of {blockedIds.Length}, please wait...");
             Task.WaitAll(muterUnblockers);
             Console.WriteLine("Done!");
         }
