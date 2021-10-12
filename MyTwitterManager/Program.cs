@@ -17,6 +17,7 @@ using Tweetinvi.Parameters.V2;
 namespace MyTwitterManager
 {
     [SuppressMessage("Reliability", "CA2007", Justification = "It is generally appropriate to suppress the warning entirely for projects that represent application code rather than library code")]
+    [SuppressMessage("Reliability", "CA2008", Justification = "It is generally appropriate to suppress the warning entirely for projects that represent application code rather than library code")]
     [SuppressMessage("Globalization", "CA1303", Justification = "I don't care about globalization for now.")]
     public static class Program
     {
@@ -47,10 +48,10 @@ namespace MyTwitterManager
 
             await DeleteOldTweets(client, settings.ScreenName, permanent.ToArray());
             await DeleteOldLikes(client, settings.ScreenName);
-            await IgnoreBlockedUsers(client, settings.ScreenName);
+            await IgnoreBlockedUsers(client);
         }
 
-        private static async Task IgnoreBlockedUsers(ITwitterClient client, string screenName)
+        private static async Task IgnoreBlockedUsers(ITwitterClient client)
         {
             long[] blockedIds = await RetryAsync(() => client.Users.GetBlockedUserIdsAsync(), "Getting blocked users");
 
