@@ -46,7 +46,7 @@ namespace MyTwitterManager
                 permanent.AddRange(settings.PermanentTweetIds);
             }
 
-            await DeleteOldTweets(client, settings.ScreenName, permanent.ToArray());
+            await DeleteOldTweets(client, settings.ScreenName, permanent.ToArray(), settings.MaxTweetAgeMultiplier);
             await DeleteOldLikes(client, settings.ScreenName);
             await IgnoreBlockedUsers(client);
         }
@@ -66,7 +66,7 @@ namespace MyTwitterManager
             Console.WriteLine("Done!");
         }
 
-        private static async Task DeleteOldTweets(ITwitterClient client, string screenName, long[] permanentIds)
+        private static async Task DeleteOldTweets(ITwitterClient client, string screenName, long[] permanentIds, double maxTweetAgeMultiplier)
         {
             var tweetsToDelete = new HashSet<long>();
             int totalCount = 0;
@@ -91,7 +91,8 @@ namespace MyTwitterManager
 
                 bool anyInteraction = (tweet.FavoriteCount + retweets + (tweet.QuoteCount ?? 0)) > 0 || tweet.InReplyToStatusId.HasValue;
 
-                int maxDaysOld = 14 + (anyInteraction ? 7 : 0) + tweet.FavoriteCount * 3 + retweets * 7 + (tweet.QuoteCount ?? 0) * 14;
+                int maxDaysOld = 2 + (anyInteraction ? 1 : 0) + (tweet.FavoriteCount + 1) / 2 + retweets + (tweet.QuoteCount ?? 0) * 2;
+                maxDaysOld = (int)(maxDaysOld * maxTweetAgeMultiplier);
                 if (maxDaysOld > 180) maxDaysOld = 365 * 5;
 
                 var daysOld = DateTimeOffset.Now - tweet.CreatedAt;
