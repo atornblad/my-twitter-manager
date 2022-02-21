@@ -5,7 +5,5 @@
         1483460406249152515,
         1491342102902755328
     ],
-    "tweets": {
-        "maxagemultiplier": 3
-    }
+    "maxtweetagemultiplier": 3
 }
