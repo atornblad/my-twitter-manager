@@ -11,6 +11,7 @@ namespace MyTwitterManager
         private const string TWITTER_ACCESS_TOKEN = nameof(TWITTER_ACCESS_TOKEN);
         private const string TWITTER_ACCESS_TOKEN_SECRET = nameof(TWITTER_ACCESS_TOKEN_SECRET);
         private const string TWITTER_SCREEN_NAME = nameof(TWITTER_SCREEN_NAME);
+        private const string MAX_TWEET_AGE_MULTIPLIER = nameof(MAX_TWEET_AGE_MULTIPLIER);
 
         [EnvironmentVariable(TWITTER_API_KEY)]
         public string ApiKey { get; set; }
@@ -30,5 +31,9 @@ namespace MyTwitterManager
         [SuppressMessage("Performance", "CA1819", Justification = "I really don't care about performance for a configuration object!")]
         [JsonPropertyName("permanent")]
         public long[] PermanentTweetIds { get; set; }
+        
+        [EnvironmentVariable(MAX_TWEET_AGE_MULTIPLIER)]
+        [JsonPropertyName("maxtweetagemultiplier")]
+        public double MaxTweetAgeMultiplier { get; set; } = 7.0;
     }
 }
