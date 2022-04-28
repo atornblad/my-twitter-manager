@@ -46,7 +46,9 @@ namespace MyTwitterManager
                 permanent.AddRange(settings.PermanentTweetIds);
             }
 
-            await DeleteOldTweets(client, settings.ScreenName, permanent.ToArray(), settings.MaxTweetAgeMultiplier);
+            var regexes = settings.PermanentRegexPatterns?.Select(pattern => new Regex(pattern, RegexOptions.Compiled)).ToArray();
+
+            await DeleteOldTweets(client, settings.ScreenName, permanent.ToArray(), regexes, settings.MaxTweetAgeMultiplier);
             await DeleteOldLikes(client, settings.ScreenName);
             await IgnoreBlockedUsers(client);
         }
