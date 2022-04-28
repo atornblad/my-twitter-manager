@@ -35,5 +35,9 @@ namespace MyTwitterManager
         [EnvironmentVariable(MAX_TWEET_AGE_MULTIPLIER)]
         [JsonPropertyName("maxtweetagemultiplier")]
         public double MaxTweetAgeMultiplier { get; set; } = 7.0;
+
+        [SuppressMessage("Performance", "CA1819", Justification = "I really don't care about performance for a configuration object!")]
+        [JsonPropertyName("permanentregex")]
+        public string[] PermanentRegexPatterns { get; set;}
     }
 }

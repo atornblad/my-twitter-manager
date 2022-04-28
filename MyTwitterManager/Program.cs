@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using ATornblad.Conphig;
@@ -10,7 +11,6 @@ using Tweetinvi;
 using Tweetinvi.Exceptions;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
-using Tweetinvi.Parameters.V2;
 
 [assembly: CLSCompliant(true)]
 
@@ -66,7 +66,7 @@ namespace MyTwitterManager
             Console.WriteLine("Done!");
         }
 
-        private static async Task DeleteOldTweets(ITwitterClient client, string screenName, long[] permanentIds, double maxTweetAgeMultiplier)
+        private static async Task DeleteOldTweets(ITwitterClient client, string screenName, long[] permanentIds, Regex[] permanentRegexes, double maxTweetAgeMultiplier)
         {
             var tweetsToDelete = new HashSet<long>();
             int totalCount = 0;
@@ -76,9 +76,16 @@ namespace MyTwitterManager
                 int retweets = tweet.RetweetCount;
                 string text = tweet.FullText;
 
+                if (permanentRegexes.Any(regex => regex.IsMatch(text)))
+                {
+                    Console.WriteLine($"Permanent tweet by regex https://twitter.com/{tweet.CreatedBy.ScreenName}/status/{tweet.Id}: {text}");
+                    ++totalCount;
+                    return;
+                }
+
                 if (permanentIds.Contains(tweet.Id))
                 {
-                    Console.WriteLine($"Permanent tweet {tweet.Id}: {tweet.FullText}");
+                    Console.WriteLine($"Permanent tweet https://twitter.com/{tweet.CreatedBy.ScreenName}/status/{tweet.Id}: {text}");
                     ++totalCount;
                     return;
                 }

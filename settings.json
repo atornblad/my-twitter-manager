@@ -4,5 +4,8 @@
         1501872822842535937,
         1503756154895319047
     ],
-    "maxtweetagemultiplier": 2
+    "maxtweetagemultiplier": 2,
+    "permanentregex": [
+        "Time to change your password to"
+    ]
 }
