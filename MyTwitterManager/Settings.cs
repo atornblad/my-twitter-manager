@@ -38,6 +38,6 @@ namespace MyTwitterManager
 
         [SuppressMessage("Performance", "CA1819", Justification = "I really don't care about performance for a configuration object!")]
         [JsonPropertyName("permanentregex")]
-        public string[] PermanentRegexPatterns { get; set;}
+        public string[] PermanentRegexPatterns { get; set; }
     }
 }
