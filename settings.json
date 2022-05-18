@@ -1,12 +1,5 @@
 {
     "permanent": [
-        1483460406249152515,
-        1501872822842535937,
-
-        /* Child-free conversation (keeping just the top two tweets) */
-        1519519755660582915,
-        1519523623349981184,
-
         /* Vanity projects thread */
         1519324057694621697,
         1519324059691012096,
@@ -14,7 +7,7 @@
         1519324063684083712,
         1519324065646981120
     ],
-    "maxtweetagemultiplier": 2,
+    "maxtweetagemultiplier": 1,
     "permanentregex": [
         "Time to change your password to"
     ]
