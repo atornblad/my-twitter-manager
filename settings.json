@@ -9,6 +9,8 @@
     ],
     "maxtweetagemultiplier": 1,
     "permanentregex": [
-        "Time to change your password to"
+        "Time to change your password to",
+        "^I'm a gen-X software developer."
     ]
 }
+// I'm an expert developer, but i still need to google "
