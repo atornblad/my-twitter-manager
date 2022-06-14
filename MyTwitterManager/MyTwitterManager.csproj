@@ -25,11 +25,11 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="TweetinviAPI" Version="5.0.4" />
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Conphig" Version="1.0.1" />
+    <PackageReference Include="Conphig" Version="1.0.2" />
   </ItemGroup>
   <ItemGroup>
     <None Update="settings.json">

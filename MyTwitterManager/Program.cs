@@ -64,7 +64,7 @@ namespace MyTwitterManager
                 )
             ).Take(100).ToArray();
             Console.WriteLine($"Muting and unblocking {muterUnblockers.Length} users out of {blockedIds.Length}, please wait...");
-            Task.WaitAll(muterUnblockers);
+            await Task.WhenAll(muterUnblockers);
             Console.WriteLine("Done!");
         }
 
@@ -124,7 +124,7 @@ namespace MyTwitterManager
                 )
             ).ToArray();
             Console.WriteLine($"Destroying {destroyers.Length} tweets of {totalCount}, please wait...");
-            Task.WaitAll(destroyers);
+            await Task.WhenAll(destroyers);
             Console.WriteLine("Done!");
         }
 
@@ -163,7 +163,7 @@ namespace MyTwitterManager
                 )
             ).ToArray();
             Console.WriteLine($"Destroying {destroyers.Length} likes of {totalCount}, please wait...");
-            Task.WaitAll(destroyers);
+            await Task.WhenAll(destroyers);
             Console.WriteLine("Done!");
         }
 
@@ -233,7 +233,7 @@ namespace MyTwitterManager
                 {
                     if (te.StatusCode == 404)
                     {
-                        Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
+                        await Console.Error.WriteLineAsync($"Caught a 404 Not Found error. Aborting!");
                         return;
                     }
                     double logMin = Math.Log((minDelay ?? MIN_RETRY_TIME).TotalSeconds);
@@ -241,11 +241,11 @@ namespace MyTwitterManager
                     double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 2);
                     double seconds = Math.Exp(logThis);
                     TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
-                    Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
-                    Console.Error.WriteLine($"Caught exception {te.GetType().Name}: \"{te.Message}\"");
-                    Console.Error.WriteLine($"Sleeping for {sleep}");
+                    await Console.Error.WriteLineAsync($"Error in task {title}, try {i} of {maxTries}");
+                    await Console.Error.WriteLineAsync($"Caught exception {te.GetType().Name}: \"{te.Message}\"");
+                    await Console.Error.WriteLineAsync($"Sleeping for {sleep}");
                     Thread.Sleep(sleep);
-                    Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
+                    await Console.Error.WriteLineAsync($"Retrying {i + 1} of {maxTries}");
                 }
             }
             await func();
@@ -263,7 +263,7 @@ namespace MyTwitterManager
                 {
                     if (te.StatusCode == 404)
                     {
-                        Console.Error.WriteLine($"Caught a 404 Not Found error. Aborting!");
+                        await Console.Error.WriteLineAsync($"Caught a 404 Not Found error. Aborting!");
                         return default;
                     }
                     double logMin = Math.Log((minDelay ?? MIN_RETRY_TIME).TotalSeconds);
@@ -271,11 +271,11 @@ namespace MyTwitterManager
                     double logThis = logMin + (logMax - logMin) * (i - 1) / (maxTries - 2);
                     double seconds = Math.Exp(logThis);
                     TimeSpan sleep = TimeSpan.FromSeconds(Math.Round(seconds));
-                    Console.Error.WriteLine($"Error in task {title}, try {i} of {maxTries}");
-                    Console.Error.WriteLine($"Caught exception {te.GetType().Name}: \"{te.Message}\"");
-                    Console.Error.WriteLine($"Sleeping for {sleep}");
+                    await Console.Error.WriteLineAsync($"Error in task {title}, try {i} of {maxTries}");
+                    await Console.Error.WriteLineAsync($"Caught exception {te.GetType().Name}: \"{te.Message}\"");
+                    await Console.Error.WriteLineAsync($"Sleeping for {sleep}");
                     Thread.Sleep(sleep);
-                    Console.Error.WriteLine($"Retrying {i + 1} of {maxTries}");
+                    await Console.Error.WriteLineAsync($"Retrying {i + 1} of {maxTries}");
                 }
             }
             return await func();
