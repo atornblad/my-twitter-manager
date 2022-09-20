@@ -80,14 +80,14 @@ namespace MyTwitterManager
 
                 if (permanentRegexes.Any(regex => regex.IsMatch(text)))
                 {
-                    Console.WriteLine($"Permanent tweet by regex https://twitter.com/{tweet.CreatedBy.ScreenName}/status/{tweet.Id}: {text}");
+                    Console.WriteLine($"Permanent tweet by regex https://twitter.com/{tweet.CreatedBy.ScreenName}/status/{tweet.Id} : {text}");
                     ++totalCount;
                     return;
                 }
 
                 if (permanentIds.Contains(tweet.Id))
                 {
-                    Console.WriteLine($"Permanent tweet https://twitter.com/{tweet.CreatedBy.ScreenName}/status/{tweet.Id}: {text}");
+                    Console.WriteLine($"Permanent tweet https://twitter.com/{tweet.CreatedBy.ScreenName}/status/{tweet.Id} : {text}");
                     ++totalCount;
                     return;
                 }
