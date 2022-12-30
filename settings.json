@@ -3,17 +3,12 @@
         /* Conphig */
         1443916248262250498,
         /* Spectrumizer things */
-        1557612429370179589,
-        /* Buy forest */
-        1578661073401810944,
-        /* The aging PUA... */
-        1584208882859413505
+        1557612429370179589
     ],
     "maxtweetagemultiplier": 1,
     "permanentregex": [
         "Time to change your password to",
-        "^I'm a gen-X software developer.",
-        "(\\d+)/(\\d+)$"
+        "^I'm a gen-X software developer."
     ]
 }
-// I'm an expert developer, but i still need to google "
+
